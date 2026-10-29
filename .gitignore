@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment files and local configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Build output
+dist/
+**/dist/
+coverage/
+
+# Runtime data and logs
+backend/data/
+logs/
+*.log
+npm-debug.log*
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
