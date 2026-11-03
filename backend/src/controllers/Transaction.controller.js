@@ -1,8 +1,31 @@
 import mongoose from "mongoose";
 import Transaction from "../models/Transaction.js";
 
+const PAYMENT_METHODS = ["Cash", "UPI", "Card", "Net Banking", "Other"];
+const MAX_PAGE_SIZE = 100;
+
+const parsePositiveInteger = (value, defaultValue) => {
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  if (typeof value !== "string" || !/^[1-9]\d*$/.test(value)) {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+  return Number.isSafeInteger(parsedValue) ? parsedValue : null;
+};
+
 export const createTransaction = async (req, res, next) => {
   try {
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+      return res.status(400).json({
+        success: false,
+        message: "Request body must be a JSON object.",
+      });
+    }
+
     const {
       transactionDate,
       productName,
@@ -15,8 +38,10 @@ export const createTransaction = async (req, res, next) => {
     if (
       typeof productName !== "string" ||
       !productName.trim() ||
+      productName.trim().length > 120 ||
       typeof category !== "string" ||
       !category.trim() ||
+      category.trim().length > 60 ||
       quantity === undefined ||
       unitPrice === undefined ||
       !paymentMethod
@@ -27,11 +52,18 @@ export const createTransaction = async (req, res, next) => {
       });
     }
 
-    const parsedQuantity = Number(quantity);
-    const parsedPrice = Number(unitPrice);
+    const isNumericInput = (value) =>
+      typeof value === "number" ||
+      (typeof value === "string" && value.trim() !== "");
+    const parsedQuantity = isNumericInput(quantity)
+      ? Number(quantity)
+      : Number.NaN;
+    const parsedPrice = isNumericInput(unitPrice)
+      ? Number(unitPrice)
+      : Number.NaN;
 
     if (
-      !Number.isInteger(parsedQuantity) ||
+      !Number.isSafeInteger(parsedQuantity) ||
       parsedQuantity < 1 ||
       !Number.isFinite(parsedPrice) ||
       parsedPrice < 0
@@ -39,13 +71,11 @@ export const createTransaction = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message:
-          "Quantity must be a positive integer and price cannot be negative.",
+          "Quantity must be a positive safe integer and price cannot be negative.",
       });
     }
 
-    if (
-      !["Cash", "UPI", "Card", "Net Banking", "Other"].includes(paymentMethod)
-    ) {
+    if (!PAYMENT_METHODS.includes(paymentMethod)) {
       return res.status(400).json({
         success: false,
         message: "Invalid payment method.",
@@ -63,9 +93,16 @@ export const createTransaction = async (req, res, next) => {
       });
     }
 
-    const totalAmount = Number(
-      (parsedQuantity * parsedPrice).toFixed(2)
-    );
+    const unroundedTotal = parsedQuantity * parsedPrice;
+
+    if (!Number.isFinite(unroundedTotal) || unroundedTotal >= 1e21) {
+      return res.status(400).json({
+        success: false,
+        message: "Transaction total is out of range.",
+      });
+    }
+
+    const totalAmount = Number(unroundedTotal.toFixed(2));
 
     const transaction = await Transaction.create({
       transactionCode: `TXN-${new mongoose.Types.ObjectId().toString()}`,
@@ -100,11 +137,35 @@ export const getTransactions = async (req, res, next) => {
       limit = "10",
     } = req.query;
 
-    const pageNumber = Math.max(1, Number.parseInt(page, 10) || 1);
-    const pageSize = Math.min(
-      100,
-      Math.max(1, Number.parseInt(limit, 10) || 10)
-    );
+    const pageNumber = parsePositiveInteger(page, 1);
+    const pageSize = parsePositiveInteger(limit, 10);
+
+    if (
+      pageNumber === null ||
+      pageSize === null ||
+      pageSize > MAX_PAGE_SIZE ||
+      !Number.isSafeInteger((pageNumber - 1) * pageSize)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `page must be a positive safe integer and limit must be between 1 and ${MAX_PAGE_SIZE}.`,
+      });
+    }
+
+    if (
+      (search !== undefined &&
+        (typeof search !== "string" || search.length > 100)) ||
+      (category !== undefined &&
+        (typeof category !== "string" || category.length > 60)) ||
+      (paymentMethod !== undefined &&
+        (typeof paymentMethod !== "string" ||
+          !PAYMENT_METHODS.includes(paymentMethod)))
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid search or filter parameters.",
+      });
+    }
 
     const filter = {};
 
@@ -155,6 +216,17 @@ export const getTransactions = async (req, res, next) => {
 
         end.setUTCHours(23, 59, 59, 999);
         filter.transactionDate.$lte = end;
+      }
+
+      if (
+        filter.transactionDate.$gte &&
+        filter.transactionDate.$lte &&
+        filter.transactionDate.$gte > filter.transactionDate.$lte
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "startDate must be before endDate.",
+        });
       }
     }
 

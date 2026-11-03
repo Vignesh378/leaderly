@@ -9,13 +9,15 @@ npm install
 npm run dev
 ```
 
-The frontend expects the API at `http://localhost:5000/api` by default. To use a different backend, create a `.env` file with:
+For local development the frontend defaults to `http://localhost:5000/api`. For a deployed build, configure `VITE_API_URL` to the full API base URL ending in `/api`:
 
 ```sh
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=https://your-api.example.com/api
 ```
 
-The backend must be running and allow the frontend origin through CORS.
+Production builds fail if `VITE_API_URL` is missing. The backend must allow the exact frontend origin through `CORS_ORIGINS`.
+
+For Vercel, set the project Root Directory to `frontend/`; `vercel.json` provides client-side routing and browser security headers. See the repository [deployment guide](../README.md) for the Render API setup.
 
 ## Validate
 

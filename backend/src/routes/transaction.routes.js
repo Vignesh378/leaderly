@@ -1,4 +1,5 @@
 import express from "express";
+import { writeRateLimiter } from "../middleware/apiRateLimiter.js";
 
 import {
   createTransaction,
@@ -9,9 +10,9 @@ import {
 
 const router = express.Router();
 
-router.post("/", createTransaction);
+router.post("/", writeRateLimiter, createTransaction);
 router.get("/", getTransactions);
 router.get("/:id", getTransactionById);
-router.delete("/:id", deleteTransaction);
+router.delete("/:id", writeRateLimiter, deleteTransaction);
 
 export default router;
