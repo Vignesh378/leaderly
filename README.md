@@ -21,13 +21,17 @@ The backend listens on port 5000 by default. Frontend API URLs must end in `/api
 
 Render checks `/api/health`; it returns `503` until MongoDB is connected.
 
-### Frontend on Vercel
+### Current Vercel deployment
 
-1. Import the repository and set the Vercel project Root Directory to `frontend/`.
-2. The checked-in `frontend/.env.production` defaults `VITE_API_URL` to `https://ledgerly-api.onrender.com/api`, matching the Render service name in `render.yaml`. If Render assigns a different hostname or you use a custom domain, set `VITE_API_URL` in Vercel to that API URL ending in `/api`.
-3. Add the final Vercel domain to the API's `CORS_ORIGINS`.
+The deployed API URL provided for this project is `https://leaderly-59a9.vercel.app/api`; the frontend production build now uses it. Because the frontend and API share an origin, a separate CORS origin is not needed for this deployment.
+
+The API health endpoint currently responds with `503 unavailable`, which indicates MongoDB is not connected in the deployed backend. Configure the production `MONGODB_URI` and verify `https://leaderly-59a9.vercel.app/api/health` returns HTTP 200 before relying on transaction and analytics requests.
 
 `frontend/vercel.json` configures client-side routing and browser security headers. `VITE_API_URL` is embedded in the frontend build, so redeploy after changing it.
+
+### Optional API deployment on Render
+
+The repository also includes a Render Blueprint in `render.yaml` for a separate API deployment. If using it instead of the current same-origin API, set `VITE_API_URL` in Vercel to the Render API URL ending in `/api` and set that Vercel site's exact origin in Render's `CORS_ORIGINS`.
 
 ## Production access warning
 

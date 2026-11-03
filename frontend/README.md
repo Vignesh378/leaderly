@@ -15,7 +15,7 @@ For local development the frontend defaults to `http://localhost:5000/api`. For 
 VITE_API_URL=https://your-api.example.com/api
 ```
 
-Production builds default to `https://ledgerly-api.onrender.com/api`, matching the Render service in the repository blueprint. Set `VITE_API_URL` in the build environment if your deployed API has a different hostname. The backend must allow the exact frontend origin through `CORS_ORIGINS`.
+Production builds default to the deployed API at `https://leaderly-59a9.vercel.app/api`. Set `VITE_API_URL` in the build environment if your API has a different hostname. If the API is deployed on a separate origin, allow the exact frontend origin through the backend's `CORS_ORIGINS`.
 
 For Vercel, set the project Root Directory to `frontend/`; `vercel.json` provides client-side routing and browser security headers. See the repository [deployment guide](../README.md) for the Render API setup.
 
