@@ -24,10 +24,10 @@ Render checks `/api/health`; it returns `503` until MongoDB is connected.
 ### Frontend on Vercel
 
 1. Import the repository and set the Vercel project Root Directory to `frontend/`.
-2. Set the build environment variable `VITE_API_URL` to the Render API URL ending in `/api`, for example `https://your-api.onrender.com/api`.
+2. The checked-in `frontend/.env.production` defaults `VITE_API_URL` to `https://ledgerly-api.onrender.com/api`, matching the Render service name in `render.yaml`. If Render assigns a different hostname or you use a custom domain, set `VITE_API_URL` in Vercel to that API URL ending in `/api`.
 3. Add the final Vercel domain to the API's `CORS_ORIGINS`.
 
-`frontend/vercel.json` configures client-side routing and browser security headers. `VITE_API_URL` is embedded in the frontend build, so rebuild after changing it.
+`frontend/vercel.json` configures client-side routing and browser security headers. `VITE_API_URL` is embedded in the frontend build, so redeploy after changing it.
 
 ## Production access warning
 
