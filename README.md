@@ -23,9 +23,9 @@ Render checks `/api/health`; it returns `503` until MongoDB is connected.
 
 ### Current Vercel deployment
 
-The deployed API URL provided for this project is `https://leaderly-59a9.vercel.app/api`; the frontend production build now uses it. Because the frontend and API share an origin, a separate CORS origin is not needed for this deployment.
+The deployed API URL provided for this project is `https://leaderly-59a9.vercel.app/api`; the frontend production build now uses it. Because the frontend and API share an origin, a separate CORS origin is not needed for this deployment. The Express app now connects to MongoDB on API requests as well as during standalone server startup, which supports Vercel's Express function runtime.
 
-The API health endpoint currently responds with `503 unavailable`, which indicates MongoDB is not connected in the deployed backend. Configure the production `MONGODB_URI` and verify `https://leaderly-59a9.vercel.app/api/health` returns HTTP 200 before relying on transaction and analytics requests.
+Set the `MONGODB_URI` secret in the Vercel project's Production environment (and redeploy). Configure MongoDB network access to permit connections from the Vercel deployment. API requests return `503` with an actionable message when the database is unavailable; verify `https://leaderly-59a9.vercel.app/api/health` returns HTTP 200 before relying on transaction and analytics requests.
 
 `frontend/vercel.json` configures client-side routing and browser security headers. `VITE_API_URL` is embedded in the frontend build, so redeploy after changing it.
 

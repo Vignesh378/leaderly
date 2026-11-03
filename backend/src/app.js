@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import helmet from "helmet";
+import connectDB from "./config/database.js";
 import errorHandler from "./middleware/errorHandler.js";
 import { apiRateLimiter } from "./middleware/apiRateLimiter.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
@@ -57,6 +58,24 @@ app.use(
 app.use(express.json({ limit: "16kb" }));
 
 app.use("/api", apiRateLimiter);
+
+app.use("/api", async (req, res, next) => {
+  try {
+    await connectDB();
+    return next();
+  } catch (error) {
+    console.error("MongoDB connection unavailable:", error.message);
+
+    return res.status(503).json(
+      req.path === "/health"
+        ? { success: false, status: "unavailable" }
+        : {
+            success: false,
+            message: "Database unavailable. Check MONGODB_URI and database network access.",
+          }
+    );
+  }
+});
 
 app.get("/", (req, res) => {
   res.status(200).json({

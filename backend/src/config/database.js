@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+let pendingConnection;
+
 const connectDB = async () => {
   const uri = process.env.MONGODB_URI;
 
@@ -7,11 +9,29 @@ const connectDB = async () => {
     throw new Error("MONGODB_URI is required.");
   }
 
-  await mongoose.connect(uri, {
-    serverSelectionTimeoutMS: 10_000,
-  });
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
 
-  console.info("MongoDB connected.");
+  if (!pendingConnection) {
+    pendingConnection = mongoose
+      .connect(uri, {
+        serverSelectionTimeoutMS: 10_000,
+      })
+      .then(() => {
+        console.info("MongoDB connected.");
+      });
+  }
+
+  const connection = pendingConnection;
+
+  try {
+    await connection;
+  } finally {
+    if (pendingConnection === connection) {
+      pendingConnection = undefined;
+    }
+  }
 };
 
 export default connectDB;
